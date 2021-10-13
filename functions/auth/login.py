@@ -15,20 +15,22 @@ def lambda_handler(event, context):
         user = payload['username']
         password = payload['password']
     except (ValueError, KeyError):
-        # TODO: Handle this error, investigate how to return unauthorized
-        return json.dumps({
-            "errorType": "Unauthorized",
-            "statusCode": 401
-        })
+        return {
+            "statusCode": 401,
+            "body": json.dumps({
+                "message": "unauthorized"
+            })
+        }
 
     is_authorized = database.validate_user_password(user, password)
 
     if not is_authorized:
-        # TODO: Add method to respond unauthorized
-        return json.dumps({
-            "errorType": "Unauthorized",
-            "statusCode": 401
-        })
+        return {
+            "statusCode": 401,
+            "body": json.dumps({
+                "message": "unauthorized"
+            })
+        }
 
     query_result = database.get_role_by_username('admin')
     token = token_functions.generate_token(query_result)
