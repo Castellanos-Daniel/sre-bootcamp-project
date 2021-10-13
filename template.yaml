@@ -1,0 +1,182 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Capstone Project App
+
+  Wizeline SRE Bootcamp Delivery 2
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Runtime: python3.9
+    CodeUri: functions/
+    Timeout: 10
+
+Parameters:
+  SecretsArn:
+    Type: String
+    Default: arn:aws:secretsmanager:us-east-2:874223335165:secret:dev/db_creds-TnOxtk
+  AWSRegion:
+    Type: String
+    Default: us-east-2
+  DeploymentStage:
+    Type: String
+    Default: Dev
+  LambdaSg:
+    Description: "Security Group for the lambda function"
+    Type: AWS::EC2::SecurityGroup::Id
+  LambdaSubnets:
+    Description: "List of subnets to deploy the lamba function"
+    Type: List<AWS::EC2::Subnet::Id>
+  DBResourceId:
+    Type: String
+    Description: "RDS DB instance resource identifier"
+  DBEndpoint:
+    Type: String
+    Description: "Amazon RDS MySQL endpoint"
+  DBName:
+    Type: String
+    Description: "Name of the database connected"
+  DBUsername:
+    Type: String
+    NoEcho: true
+
+Resources:
+
+  CapstoneProjectApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref DeploymentStage
+      Auth:
+        DefaultAuthorizer: TokenAuthorizerFunction
+        Authorizers:
+          TokenAuthorizerFunction:
+            FunctionArn: !GetAtt TokenAuthorizerFunction.Arn
+            Identity:
+              ReauthorizeEvery: 0
+
+  DepsLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      ContentUri: lib
+      CompatibleRuntimes:
+        - python3.9
+
+  HealthCheckFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: functions/health_check/
+      Handler: health_check.event_handler
+      Events:
+        HealthCheckUri:
+          Type: Api
+          Properties:
+            RestApiId: !Ref CapstoneProjectApi
+            Path: /_health
+            Method: get
+            Auth:
+              Authorizer: 'NONE'
+        HealthCheckRoot:
+          Type: Api
+          Properties:
+            RestApiId: !Ref CapstoneProjectApi
+            Path: /
+            Method: get
+            Auth:
+              Authorizer: 'NONE'
+
+  LoginFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: functions/auth/
+      Handler: login.lambda_handler
+      Events:
+        Login:
+          Type: Api
+          Properties:
+            RestApiId: !Ref CapstoneProjectApi
+            Path: /login
+            Method: post
+            Auth:
+              Authorizer: 'NONE'
+      VpcConfig:
+        SecurityGroupIds: [ !Ref LambdaSg ]
+        SubnetIds: !Ref LambdaSubnets
+      Policies:
+        -
+          Version:  '2012-10-17'
+          Statement:
+            Effect: Allow
+            Action:
+              - rds-db:connect
+            Resource:
+              - !Sub "arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:${DBResourceId}/${DBUsername}"
+        - AWSLambdaVPCAccessExecutionRole
+        - SecretsManagerReadWrite
+      Environment:
+        Variables:
+          DB_HOST: !Ref DBEndpoint
+          DB_USER: !Ref DBUsername
+          DB_NAME: !Ref DBName
+          DbSecret: !Ref SecretsArn
+          AwsRegion: !Ref AWSRegion
+      Layers:
+        - !Ref DepsLayer
+
+  CidrToMaskFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: functions/conversions
+      Handler: urlCidrToMask.urlCidrToMask
+      Events:
+        CidrToMask:
+          Type: Api
+          Properties:
+            RestApiId: !Ref CapstoneProjectApi
+            Path: /cidr-to-mask
+            Method: get
+
+  MaskToCidrFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: functions/conversions
+      Handler: urlMaskToCidr.urlMaskToCidr
+      Events:
+        MaskToCidr:
+          Type: Api
+          Properties:
+            RestApiId: !Ref CapstoneProjectApi
+            Path: /mask-to-cidr
+            Method: get
+  
+  TokenAuthorizerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/auth/
+      Handler: authorizer.verify_token
+      Environment:
+        Variables:
+          DbSecret: !Ref SecretsArn
+          AwsRegion: !Ref AWSRegion
+      Layers:
+        - !Ref DepsLayer
+      Policies:
+      - SecretsManagerReadWrite
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  CapstoneProjectApi:
+    Description: "API Gateway endpoint URL for Capstone Project API functions"
+    Value: !Sub "https://${CapstoneProjectApi}.execute-api.${AWS::Region}.amazonaws.com/${DeploymentStage}/"
+
+  LoginFunction:
+    Description: "Login Lambda Function ARN"
+    Value: !GetAtt LoginFunction.Arn
+  CidrToMaskFunction:
+    Description: "CIRD to Mask lambda function ARN"
+    Value: !GetAtt CidrToMaskFunction.Arn
+  MaskToCidrFunction:
+    Description: "Mask to CIDR lambda funtion ARN"
+    Value: !GetAtt MaskToCidrFunction.Arn
