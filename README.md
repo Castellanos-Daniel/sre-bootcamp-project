@@ -10,4 +10,4 @@ Here's the currently deployed infrastructure.
 
 ![current infra](./diagrams/new-infra.png)
 
-Drawio format diagrams can be found in diagrams folder.
+Drawio format diagrams can be found in [diagrams](./diagrams/) folder.
