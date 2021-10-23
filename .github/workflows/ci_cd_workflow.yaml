@@ -39,4 +39,5 @@ jobs:
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.TEST_WEBHOOK }}
-          SLALCK_COLOR: "#FF0000"
+          SLALCK_COLOR: '#ff0000'
+          SLACK_USERNAME: "Bootcamp Project Pipeline"
