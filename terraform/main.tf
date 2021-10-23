@@ -1,12 +1,11 @@
 provider "aws" {
   region  = "us-east-2"
 }
-
 terraform {
   backend "s3" {
-    bucket  = var.backend_bucket
-    key     = "terraform.tfstate"
-    region  = var.region
+    bucket  = "daniel-terraform-backend"
+    key     = "terraform/terraform.tfstate"
+    region  = "us-east-2"
     encrypt = true
 
   }
