@@ -1,6 +1,15 @@
 provider "aws" {
   region  = "us-east-2"
-  profile = "wize"
+}
+
+terraform {
+  backend "s3" {
+    bucket  = var.backend_bucket
+    key     = "terraform.tfstate"
+    region  = var.region
+    encrypt = true
+
+  }
 }
 
 module "my_vpc" {
