@@ -13,6 +13,9 @@ Globals:
     Timeout: 10
 
 Parameters:
+  Environment:
+    Type: String
+    Default: dev
   SecretsArn:
     Type: String
     Default: arn:aws:secretsmanager:us-east-2:874223335165:secret:dev/db_creds-TnOxtk
@@ -120,6 +123,7 @@ Resources:
           DB_NAME: !Ref DBName
           DbSecret: !Ref SecretsArn
           AwsRegion: !Ref AWSRegion
+          ENVIRONMENT: !Ref Environment
       Layers:
         - !Ref DepsLayer
 
