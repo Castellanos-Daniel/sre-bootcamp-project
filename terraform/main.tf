@@ -4,10 +4,9 @@ provider "aws" {
 terraform {
   backend "s3" {
     bucket  = "daniel-terraform-backend"
-    key     = "terraform/terraform.tfstate"
+    key     = "project/terraform.tfstate"
     region  = "us-east-2"
     encrypt = true
-
   }
 }
 
@@ -36,6 +35,7 @@ data "aws_vpcs" "created_vpc" {
     module.my_vpc
   ]
 }
+data "aws_caller_identity" "current" {}
 
 output "vpc_public_subnet" {
   value = module.my_vpc.public_subnet
@@ -51,4 +51,8 @@ output "vpc_id" {
 
 output "db_identifier" {
   value = module.rds_db.identifier
+}
+
+output "account_id" {
+  value = data.aws_caller_identity.current.account_id
 }
