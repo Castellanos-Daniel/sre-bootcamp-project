@@ -22,6 +22,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r ./tests/requirements.txt
       - name: Test with pytest
+
         run: |
           coverage run -m pytest tests/unit/
           coverage report -m
@@ -36,6 +37,7 @@ jobs:
           API_TOKEN: ${{ secrets.API_TOKEN }}
           SLACK_WEBHOOK: ${{ secrets.TEST_WEBHOOK }}
       - name: Slack Notification
+        if: ${{ failure() }}
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.TEST_WEBHOOK }}
