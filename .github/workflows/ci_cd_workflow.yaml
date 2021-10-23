@@ -6,7 +6,7 @@ on:
       - final-demo
 
 jobs:
-  Run Unittest:
+  Unittests:
     runs-on: ubuntu-latest
     # strategy:
     #   matrix:
