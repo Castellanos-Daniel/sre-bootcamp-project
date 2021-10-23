@@ -26,7 +26,6 @@ jobs:
           coverage run -m pytest tests/unit/
           coverage report -m
           exit 1
-        uses: rtCamp/action-slack-notify@v2
         env:
           ENVIRONMENT: ${{ secrets.ENVIRONMENT }}
           DB_HOST: ${{ secrets.DB_HOST }}
@@ -40,3 +39,4 @@ jobs:
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.TEST_WEBHOOK }}
+          SLALCK_COLOR: "#FF0000"
