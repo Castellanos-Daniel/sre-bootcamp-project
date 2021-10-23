@@ -20,7 +20,6 @@ def urlCidrToMask(event, context):
         request_parameters = event['multiValueQueryStringParameters']
         cidr = request_parameters['value'][0]
     except (TypeError, KeyError) as error:
-        # TODO: Create an error handler for this cases
         print("Catched this error: ", str(error))
         cidr = ""
 
