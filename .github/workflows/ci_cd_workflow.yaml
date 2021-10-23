@@ -67,8 +67,9 @@ jobs:
         ls -l
         terraform init -input=false
 
-    - name: Terraform validation
-      run: terraform validate
-
-    - name: Terraform Plan
-      run: terraform plan
+    - name: Terraform validation and plan
+      run: 
+        |
+        cd terraform/
+        terraform validate
+        terraform plan
