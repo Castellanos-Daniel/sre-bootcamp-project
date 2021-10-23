@@ -6,7 +6,7 @@ on:
       - final-demo
 
 jobs:
-  Unittest:
+  Run Unittest:
     runs-on: ubuntu-latest
     # strategy:
     #   matrix:
@@ -40,7 +40,7 @@ jobs:
         env:
           SLACK_TITLE: Unittests have failed
           SLACK_USERNAME: "Bootcamp Project Pipeline"
-          SLALCK_COLOR: 'danger'
+          SLACK_COLOR: 'danger'
           SLACK_MESSAGE: 'Branch is unhealthy, check test results'
           SLACK_WEBHOOK: ${{ secrets.TEST_WEBHOOK }}
           
