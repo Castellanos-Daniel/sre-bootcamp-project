@@ -1,7 +1,7 @@
 output "db_endpoint" {
-  value = aws_db_instance.db_instance.endpoint
+  value = module.db.db_instance_endpoint
 }
 
 output "identifier" {
-  value = aws_db_instance.db_instance.identifier
+  value = module.db.db_instance_id
 }

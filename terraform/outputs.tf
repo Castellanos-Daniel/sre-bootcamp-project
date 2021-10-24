@@ -1,17 +1,17 @@
-output "vpc_public_subnet" {
-  value = module.my_vpc.public_subnet
+output "vpc_id" {
+  value = data.aws_vpcs.created_vpc.ids
 }
 
 output "db_endpoint" {
   value = module.rds_db.db_endpoint
 }
 
-output "vpc_id" {
-  value = data.aws_vpcs.created_vpc.ids
-}
-
 output "db_identifier" {
   value = module.rds_db.identifier
+}
+
+output "lambda_deps_layer_arn" {
+  value = module.lambda_deps_layer.deps_layer_arn
 }
 
 output "account_id" {
