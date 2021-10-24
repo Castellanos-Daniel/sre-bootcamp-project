@@ -42,7 +42,7 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-      
+
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
@@ -50,20 +50,6 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.REGION }}
     
-    - name: Pack dependencies
-      run:
-        |
-        mkdir -p libs/python
-        pip install -r requirements.txt -t libs/python
-        aws s3 cp s3://$DEPS_LAYER_BUCKET/cert/us-east-2-bundle.pem lib/python/
-        zip -r -u deps.zip lib/
-        aws s3 cp deps.zip s3://$DEPS_LAYER_BUCKET/
-      env:
-        DEPS_LAYER_BUCKET: ${{ secrets.DEPS_LAYER_BUCKET}}
-    
-    - name: Verify Terraform version
-      run: terraform --version
-
     - name: Terraform init
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -75,6 +61,20 @@ jobs:
         cd terraform/
         ls -l
         terraform init -input=false
+    
+    - name: Pack dependencies
+      run:
+        |
+        mkdir -p libs/python
+        pip install -r requirements.txt -t libs/python
+        aws s3 cp s3://$DEPS_LAYER_BUCKET/cert/us-east-2-bundle.pem lib/python/
+        zip -r -u deps.zip lib/
+
+      env:
+        DEPS_LAYER_BUCKET: ${{ secrets.DEPS_LAYER_BUCKET}}
+    
+    - name: Verify Terraform version
+      run: terraform --version
 
     - name: Terraform validation and plan
       run: 
