@@ -25,7 +25,6 @@ jobs:
         run: |
           coverage run -m pytest tests/unit/
           coverage report -m
-          exit 1
         env:
           ENVIRONMENT: ${{ secrets.ENVIRONMENT }}
           DB_HOST: ${{ secrets.DB_HOST }}
