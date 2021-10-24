@@ -43,6 +43,17 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     
+    - name: Pack dependencies
+      run:
+        |
+        mkdir -p libs/python
+        pip install -r requirements.txt -t libs/python
+        aws s3 cp s3://$DEPS_LAYER_BUCKET/cert/us-east-2-bundle.pem lib/python/
+        zip -r -u deps.zip lib/
+        aws s3 cp deps.zip s3://$DEPS_LAYER_BUCKET/
+      env:
+        DEPS_LAYER_BUCKET: ${{ secrets.DEPS_LAYER_BUCKET}}
+    
     - name: Verify Terraform version
       run: terraform --version
 
@@ -57,7 +68,7 @@ jobs:
         cd terraform/
         ls -l
         terraform init -input=false
-        
+
     - name: Terraform validation and plan
       run: 
         |
@@ -78,17 +89,6 @@ jobs:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.REGION }}
-    
-    - name: Pack dependencies
-      run:
-        |
-        mkdir -p libs/python
-        pip install -r requirements.txt -t libs/python
-        aws s3 cp s3://$DEPS_LAYER_BUCKET/cert/us-east-2-bundle.pem lib/python/
-        zip -r -u deps.zip lib/
-        aws s3 cp deps.zip s3://$DEPS_LAYER_BUCKET/
-      env:
-        DEPS_LAYER_BUCKET: ${{ secrets.DEPS_LAYER_BUCKET}}
   
   FailureNotification:
     needs: [Unittests, Terraform]
