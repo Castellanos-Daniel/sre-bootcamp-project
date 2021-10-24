@@ -249,4 +249,6 @@ $RECYCLE.BIN/
 # IaC
 *terraform.tfstate*
 .terraform*
+*.zip
+terraform.tfvars
 # End of https://www.gitignore.io/api/osx,linux,python,windows,pycharm,visualstudiocode

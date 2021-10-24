@@ -65,11 +65,11 @@ jobs:
     - name: Pack dependencies
       run:
         |
-        mkdir -p libs/python
-        pip install -r requirements.txt -t libs/python
-        aws s3 cp s3://$DEPS_LAYER_BUCKET/cert/us-east-2-bundle.pem lib/python/
-        zip -r -u deps.zip lib/
-
+        mkdir python
+        pip install --upgrade pip 
+        pip install -r requirements.txt -t python/
+        aws s3 cp s3://$DEPS_LAYER_BUCKET/cert/us-east-2-bundle.pem python/
+        zip -r -u deps.zip python/*
       env:
         DEPS_LAYER_BUCKET: ${{ secrets.DEPS_LAYER_BUCKET}}
     
