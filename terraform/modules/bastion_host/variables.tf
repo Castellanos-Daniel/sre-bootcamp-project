@@ -4,3 +4,8 @@ variable "vpc_ids" {
 variable "subnet_id" {
   type = string
 }
+
+variable "name" {
+  type = string
+  default = ""
+}
