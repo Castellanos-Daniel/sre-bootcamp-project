@@ -70,6 +70,7 @@ jobs:
         pip install -r requirements.txt -t python/
         aws s3 cp s3://$DEPS_LAYER_BUCKET/cert/us-east-2-bundle.pem python/
         zip -r -u deps.zip python/*
+        mv deps.zip terraform/
       env:
         DEPS_LAYER_BUCKET: ${{ secrets.DEPS_LAYER_BUCKET}}
     
