@@ -74,6 +74,7 @@ jobs:
   FailureNotification:
     needs: [Unittests, Terraform]
     if: always() && (needs.Unittests.result == 'failure' || needs.Terraform.result == 'failure')
+    runs-on: ubuntu-latest
     steps:
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2
