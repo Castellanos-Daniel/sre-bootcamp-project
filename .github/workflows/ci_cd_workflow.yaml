@@ -25,6 +25,7 @@ jobs:
         run: |
           coverage run -m pytest tests/unit/
           coverage report -m
+          exit 1
         env:
           ENVIRONMENT: ${{ secrets.ENVIRONMENT }}
           DB_HOST: ${{ secrets.DB_HOST }}
@@ -33,15 +34,6 @@ jobs:
           DB_NAME: ${{ secrets.DB_NAME }}
           SIGNATURE: ${{ secrets.SIGNATURE }}
           API_TOKEN: ${{ secrets.API_TOKEN }}
-      - name: Slack Notification
-        if: ${{ failure() }}
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_TITLE: Unittests have failed
-          SLACK_USERNAME: "Bootcamp Project Pipeline"
-          SLACK_COLOR: 'danger'
-          SLACK_MESSAGE: 'Branch is unhealthy, check test results'
-          SLACK_WEBHOOK: ${{ secrets.TEST_WEBHOOK }}
   
   Terraform:
     needs: [Unittests]
@@ -78,3 +70,15 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         BACKEND_BUCKET: ${{ secrets.BACKEND_BUCKET }}
         REGION: ${{ secrets.REGION }}
+  
+  FailureNotification:
+    - name: Slack Notification
+      needs: [Unittests, Terraform]
+      if: always() && (needs.Unittests.result == 'failure' || needs.Terraform.result == 'failure')
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_TITLE: Unittests have failed
+        SLACK_USERNAME: "Bootcamp Project Pipeline"
+        SLACK_COLOR: 'danger'
+        SLACK_MESSAGE: 'An error has occurred, check action output for details'
+        SLACK_WEBHOOK: ${{ secrets.TEST_WEBHOOK }}
