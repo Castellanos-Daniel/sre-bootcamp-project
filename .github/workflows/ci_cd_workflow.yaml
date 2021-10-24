@@ -69,6 +69,13 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         BACKEND_BUCKET: ${{ secrets.BACKEND_BUCKET }}
         REGION: ${{ secrets.REGION }}
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.REGION }}
     
     - name: Pack dependencies
       run:
@@ -79,8 +86,6 @@ jobs:
         zip -u deps.zip lib/python
       env:
         DEPS_LAYER_BUCKET: ${{ secrets.DEPS_LAYER_BUCKET}}
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   
   FailureNotification:
     needs: [Unittests, Terraform]
