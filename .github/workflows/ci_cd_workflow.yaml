@@ -72,13 +72,14 @@ jobs:
         REGION: ${{ secrets.REGION }}
   
   FailureNotification:
-    name: Slack Notification
     needs: [Unittests, Terraform]
     if: always() && (needs.Unittests.result == 'failure' || needs.Terraform.result == 'failure')
-    uses: rtCamp/action-slack-notify@v2
-    env:
-      SLACK_TITLE: Unittests have failed
-      SLACK_USERNAME: "Bootcamp Project Pipeline"
-      SLACK_COLOR: 'danger'
-      SLACK_MESSAGE: 'An error has occurred, check action output for details'
-      SLACK_WEBHOOK: ${{ secrets.TEST_WEBHOOK }}
+    steps:
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_TITLE: Unittests have failed
+          SLACK_USERNAME: "Bootcamp Project Pipeline"
+          SLACK_COLOR: 'danger'
+          SLACK_MESSAGE: 'An error has occurred, check action output for details'
+          SLACK_WEBHOOK: ${{ secrets.TEST_WEBHOOK }}
