@@ -6,6 +6,16 @@ on:
       - final-demo
 
 jobs:
+  StartNotification:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_TITLE: Code push detected on branch
+          SLACK_USERNAME: "Bootcamp Project Pipeline"
+          SLACK_WEBHOOK: ${{ secrets.TEST_WEBHOOK }}
+
   Unittests:
     runs-on: ubuntu-latest
     # strategy:
@@ -33,64 +43,61 @@ jobs:
           DB_NAME: ${{ secrets.DB_NAME }}
           SIGNATURE: ${{ secrets.SIGNATURE }}
           API_TOKEN: ${{ secrets.API_TOKEN }}
-  
+
   Terraform:
     needs: [Unittests]
-    name: 'Terraform'
+    name: "Terraform"
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
 
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.REGION }}
-    
-    - name: Terraform init
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        BACKEND_BUCKET: ${{ secrets.BACKEND_BUCKET }}
-        REGION: ${{ secrets.REGION }}
-      run: 
-        |
-        cd terraform/
-        ls -l
-        terraform init -input=false
-    
-    - name: Pack dependencies
-      run:
-        |
-        mkdir python
-        pip install --upgrade pip 
-        pip install -r requirements.txt -t python/
-        aws s3 cp s3://$DEPS_LAYER_BUCKET/cert/us-east-2-bundle.pem python/
-        zip -r -u deps.zip python/*
-        mv deps.zip terraform/
-      env:
-        DEPS_LAYER_BUCKET: ${{ secrets.DEPS_LAYER_BUCKET}}
-    
-    - name: Verify Terraform version
-      run: terraform --version
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.REGION }}
 
-    - name: Terraform validation and plan
-      run: 
-        |
-        cd terraform/
-        terraform validate
-        terraform plan
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        BACKEND_BUCKET: ${{ secrets.BACKEND_BUCKET }}
-        REGION: ${{ secrets.REGION }}
-        TF_VAR_db_master_user: ${{ secrets.DB_MASTER_USER }}
-        TF_VAR_db_master_pass: ${{ secrets.DB_MASTER_PASS }}
-  
+      - name: Terraform init
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          BACKEND_BUCKET: ${{ secrets.BACKEND_BUCKET }}
+          REGION: ${{ secrets.REGION }}
+        run: |
+          cd terraform/
+          ls -l
+          terraform init -input=false
+
+      - name: Pack dependencies
+        run: |
+          mkdir python
+          pip install --upgrade pip 
+          pip install -r requirements.txt -t python/
+          aws s3 cp s3://$DEPS_LAYER_BUCKET/cert/us-east-2-bundle.pem python/
+          zip -r -u deps.zip python/*
+          mv deps.zip terraform/
+        env:
+          DEPS_LAYER_BUCKET: ${{ secrets.DEPS_LAYER_BUCKET}}
+
+      - name: Verify Terraform version
+        run: terraform --version
+
+      - name: Terraform validation and plan
+        run: |
+          cd terraform/
+          terraform validate
+          terraform plan
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          BACKEND_BUCKET: ${{ secrets.BACKEND_BUCKET }}
+          REGION: ${{ secrets.REGION }}
+          TF_VAR_db_master_user: ${{ secrets.DB_MASTER_USER }}
+          TF_VAR_db_master_pass: ${{ secrets.DB_MASTER_PASS }}
+
   FailureNotification:
     needs: [Unittests, Terraform]
     if: always() && (needs.Unittests.result == 'failure' || needs.Terraform.result == 'failure')
@@ -101,6 +108,6 @@ jobs:
         env:
           SLACK_TITLE: Unittests have failed
           SLACK_USERNAME: "Bootcamp Project Pipeline"
-          SLACK_COLOR: 'danger'
-          SLACK_MESSAGE: 'An error has occurred, check action output for details'
+          SLACK_COLOR: "danger"
+          SLACK_MESSAGE: "An error has occurred, check action output for details"
           SLACK_WEBHOOK: ${{ secrets.TEST_WEBHOOK }}
