@@ -1,5 +1,5 @@
 output "vpc_id" {
-  value = data.aws_vpcs.created_vpc.ids
+  value = module.my_vpc.vpc_id
 }
 
 output "db_endpoint" {
