@@ -1,13 +1,27 @@
-# resource "aws_db_subnet_group" "subnet_group" {
-#   name        = "terraform_subnet_group"
-#   description = "RDS subnet group from terraform"
-#   subnet_ids  = var.subnets
-# }
+resource "aws_security_group" "db_sg" {
+  name        = "database-sg"
+  description = "MySQL connection"
+  vpc_id      = var.vpc_id
 
-# resource "aws_db_parameter_group" "default_parameter_group" {
-#   name   = "rds-parameter-group"
-#   family = "mysql8.0"
-# }
+  ingress {
+    description     = "Allow DB Connection to VPC security group"
+    from_port       = 3306
+    to_port         = 3306
+    protocol        = "tcp"
+    security_groups = var.access_allowed_sg
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "database-sg"
+  }
+}
 
 module "db" {
   source  = "terraform-aws-modules/rds/aws"
@@ -21,31 +35,16 @@ module "db" {
   allocated_storage = 20
 
   name     = var.db_name
-  username = var.master_user 
+  username = var.master_user
   password = var.master_pass
   port     = "3306"
 
   iam_database_authentication_enabled = true
 
-    # vpc_security_group_ids = ["sg-12345678"]
-  subnet_ids = var.subnets
-  deletion_protection = false
+  vpc_security_group_ids = [aws_security_group.db_sg.id]
+  subnet_ids             = var.subnets
+  deletion_protection    = false
 
-  create_db_option_group = false
+  create_db_option_group    = false
   create_db_parameter_group = false
 }
-
-# resource "aws_db_instance" "db_instance" {
-#   identifier           = var.instance_name
-#   allocated_storage    = 10
-#   engine               = "mysql"
-#   engine_version       = "8.0.23"
-#   instance_class       = "db.t2.micro"
-#   name                 = "capstone_project_rds"
-#   username             = var.master_user         # figure out how to protect
-#   password             = var.master_pass   # figure out how to protect
-#   db_subnet_group_name = aws_db_subnet_group.subnet_group.name
-#   parameter_group_name = aws_db_parameter_group.default_parameter_group.name
-#   skip_final_snapshot  = true
-# }
-

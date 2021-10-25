@@ -20,3 +20,11 @@ variable "db_name" {
   type = string
   default = "bootcamp"
 }
+
+variable "vpc_id" {
+  type = string
+}
+
+variable "access_allowed_sg" {
+  type = list(string)
+}
