@@ -11,7 +11,7 @@ output "db_identifier" {
 }
 
 output "lambda_deps_layer_arn" {
-  value = module.lambda_deps_layer.deps_layer_arn
+  value = module.lambda_deps_layer.layer_arn
 }
 
 output "account_id" {

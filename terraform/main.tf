@@ -30,3 +30,15 @@ module "lambda_vpc_execution_role" {
   name = "lambda_db_access_role"
   db_username = "lambda-user"
 }
+
+module "lambda_db_init" {
+  source = "./modules/lambda/function/db_init"
+  source_path = "./modules/lambda/function/db_init/load_data.py"
+  security_groups = [module.vpc_sg.vpc_sg_id]
+  subnets = module.my_vpc.private_subnets
+  deps_layer_arn = module.lambda_deps_layer.layer_arn
+  env_vars = {
+    s3_bucket = "initial-data-bucket",
+    s3_filename = "initial_data.sql"
+  }
+}
