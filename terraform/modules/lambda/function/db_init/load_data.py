@@ -3,17 +3,36 @@ import os
 import logging
 import pymysql
 import boto3
+from botocore.exceptions import ClientError
+import json
 
 # Logger settings - CloudWatch
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 # Required environment variables
-db_user = os.environ['db_user']
-db_pass = os.environ['db_pass']
+s3_bucket = os.environ['s3_bucket']
+s3_filename = os.environ['s3_filename']
 db_host = os.environ['db_host']
-s3_bucket = os.environ['bucket_name']
-s3_filename = os.environ['filename']
+region_name = os.environ['region_name']
+secret_name = os.environ['secret_name']
+try:
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=region_name
+    )
+
+    get_secret_value_response = client.get_secret_value(
+        SecretId=secret_name
+    )
+except ClientError as client_error:
+    logger.error("Error getting secrets!")
+    raise client_error
+else:
+    secret = json.loads(get_secret_value_response['SecretString'])
+db_user = secret['username']
+db_pass = secret['password']
 
 # Connect to s3 and get data file
 s3 = boto3.resource('s3')
@@ -37,9 +56,10 @@ def lambda_handler(event, context):
     """
     Main entry of the AWS Lambda function.
     """
-
+    logger.info("Setting up user...")
     setup_lambda_user()
 
+    logger.info("Import to database")
     for statement in body.decode("utf-8").split(';'):
         if len(statement.strip()) < 1:
             continue

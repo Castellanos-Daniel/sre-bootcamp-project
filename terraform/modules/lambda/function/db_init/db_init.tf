@@ -4,7 +4,7 @@ module "lambda_db_init_load" {
 
   function_name = "db-init-load"
   description   = "Set up user and data in a new RDS DB"
-  handler       = "index.lambda_handler"
+  handler       = "load_data.lambda_handler"
   runtime       = "python3.9"
 
   source_path = var.source_path
@@ -13,15 +13,12 @@ module "lambda_db_init_load" {
   vpc_security_group_ids = var.security_groups
   attach_network_policy  = true
 
-#   attach_policy = true
-#   policies      = ["arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"]
-
   attach_policy_statements = true
   policy_statements = {
-    s3_read = {
+    s3__secrets_manager_read = {
       effect    = "Allow",
-      actions   = ["s3:GetObject"],
-      resources = ["arn:aws:s3:::*/*"]
+      actions   = ["s3:GetObject","secretsmanager:GetSecretValue"],
+      resources = ["*"]
     },
     rds_read = {
       effect    = "Allow"
