@@ -40,5 +40,9 @@ module "lambda_db_init" {
   env_vars = {
     s3_bucket = "initial-data-bucket",
     s3_filename = "initial_data.sql"
+    region_name = "us-east-2"
+    secret_name = "db-creds"
+    # Change the host for one that doesn't include the port
+    db_host = module.rds_db.db_address
   }
 }

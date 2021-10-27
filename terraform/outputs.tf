@@ -2,8 +2,8 @@ output "vpc_id" {
   value = module.my_vpc.vpc_id
 }
 
-output "db_endpoint" {
-  value = module.rds_db.db_endpoint
+output "db_address" {
+  value = module.rds_db.db_address
 }
 
 output "db_identifier" {
