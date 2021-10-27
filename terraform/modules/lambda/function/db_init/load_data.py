@@ -57,7 +57,10 @@ def lambda_handler(event, context):
     Main entry of the AWS Lambda function.
     """
     logger.info("Setting up user...")
-    setup_lambda_user()
+    if not user_exists():
+        setup_lambda_user()
+    else:
+        logger.info("The user exists aldeay, skipping step...")
 
     logger.info("Import to database")
     for statement in body.decode("utf-8").split(';'):
@@ -65,7 +68,25 @@ def lambda_handler(event, context):
             continue
         result = run_query(statement.strip())
         logger.info(result)
+
     return True
+
+
+def user_exists():
+
+    with db_connection.cursor(pymysql.cursors.DictCursor) as cur:
+        try:
+            cur.execute(
+                'select * from mysql.user where User = "lambda-user";'
+            )
+            query_result = cur.fetchall()
+
+            if query_result:
+                return True
+            return False
+
+        except Exception as query_error:
+            return False
 
 
 def setup_lambda_user():
