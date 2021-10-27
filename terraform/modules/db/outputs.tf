@@ -1,5 +1,5 @@
-output "db_endpoint" {
-  value = module.db.db_instance_endpoint
+output "db_address" {
+  value = module.db.db_instance_address
 }
 
 output "identifier" {
