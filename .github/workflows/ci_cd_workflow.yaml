@@ -123,6 +123,9 @@ jobs:
         run: |
           cd terraform
           terraform init
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       - name: Test with pytest
         run: |
           cd terraform && export API_URL=$(terraform output devStageApiUrl)
@@ -133,6 +136,8 @@ jobs:
           VALID_USER: ${{ secrets.VALID_USER }}
           VALID_PASSWORD: ${{ secrets.VALID_PASSWORD }}
           NO_ROLE_TOKEN: ${{ secrets.NO_ROLE_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
   FailureNotification:
     needs: [Unittests, DeployInfrastructure, TestDevelopmentAPI]
