@@ -15,7 +15,7 @@ resource "aws_api_gateway_integration" "hc_root_integration" {
 }
 
 resource "aws_lambda_permission" "hc_root_function_gw_permission" {
-  statement_id  = "AllowExecutionFromAPIGateway"
+  statement_id  = "AllowExecutionFromAPIGateway_hc_root"
   action        = "lambda:InvokeFunction"
   function_name = var.function_name
   principal     = "apigateway.amazonaws.com"

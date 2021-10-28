@@ -53,8 +53,8 @@ class TestDevelopmentAPI(unittest.TestCase):
     def test_health_check_urls(self):
         self.assertEqual(
             requests.get(self.api_url+'/_health').status_code, 200)
-        # self.assertEqual(
-        #     requests.get(self.api_url+'/').status_code, 200)
+        self.assertEqual(
+            requests.get(self.api_url+'/').status_code, 200)
 
     def is_valid_schema(self, test_string):
         if 'function' in test_string:

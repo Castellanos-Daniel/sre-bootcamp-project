@@ -3,7 +3,7 @@ name: Python package
 on:
   push:
     branches:
-      - final-demo
+      - development
 
 jobs:
   StartNotification:
@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: 3.9
@@ -41,9 +41,9 @@ jobs:
           SIGNATURE: ${{ secrets.SIGNATURE }}
           API_TOKEN: ${{ secrets.API_TOKEN }}
 
-  Terraform:
+  DeployInfrastructure:
     needs: [Unittests]
-    name: "Terraform"
+    name: "Deploy Infrastructure"
     runs-on: ubuntu-latest
 
     steps:
@@ -82,7 +82,7 @@ jobs:
       - name: Verify Terraform version
         run: terraform --version
 
-      - name: Terraform validation and plan
+      - name: Terraform validation, plan and apply
         run: |
           cd terraform/
           terraform validate
@@ -105,10 +105,39 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
+  TestDevelopmentAPI:
+    needs: [DeployInfrastructure]
+    name: "Test Development API"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r ./tests/integration/requirements.txt
+      - name: Test with pytest
+        run: |
+          cd terraform && export API_URL=$(terraform output devStageApiUrl)
+          cd ..
+          pytest ./tests/integration/
+        env:
+          TEST_TOKEN: ${{ secrets.TEST_TOKEN }}
+          VALID_USER: ${{ secrets.VALID_USER }}
+          VALID_PASSWORD: ${{ secrets.VALID_PASSWORD }}
+          NO_ROLE_TOKEN: ${{ secrets.NO_ROLE_TOKEN }}
 
   FailureNotification:
-    needs: [Unittests, Terraform]
-    if: always() && (needs.Unittests.result == 'failure' || needs.Terraform.result == 'failure')
+    needs: [Unittests, DeployInfrastructure, TestDevelopmentAPI]
+    if: |
+      always() && (
+        needs.Unittests.result == 'failure' || 
+        needs.DeployInfrastructure.result == 'failure' || 
+        needs.TestDevelopmentAPI.result == 'failure' 
+      )
     runs-on: ubuntu-latest
     steps:
       - name: Slack Notification
@@ -121,7 +150,7 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.TEST_WEBHOOK }}
   
   SuccessNotification:
-    needs: [Unittests, Terraform]
+    needs: [Unittests, DeployInfrastructure, TestDevelopmentAPI]
     runs-on: ubuntu-latest
     steps:
       - name: Slack Notification
