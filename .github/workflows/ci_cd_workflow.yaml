@@ -128,7 +128,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       - name: Test with pytest
         run: |
-          cd terraform && export API_URL=$(terraform output devStageApiUrl)
+          cd terraform && export API_URL=$(terraform output devStageApiUrl| sed 's/"//g')
           cd ..
           pytest ./tests/integration/
         env:
