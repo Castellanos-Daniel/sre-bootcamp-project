@@ -8,7 +8,7 @@ resource "aws_api_gateway_deployment" "prod_deployment" {
   #   redeployment = sha1(jsonencode([
       
   #   ]))
-  }
+  # }
 
   lifecycle {
     create_before_destroy = true
