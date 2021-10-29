@@ -26,7 +26,16 @@ module "login_function" {
     }
   }
 
-  publish = true
-  layers = [var.deps_layer_arn]
+  publish               = true
+  layers                = [var.deps_layer_arn]
   environment_variables = var.env_vars
+}
+
+module "login_alias_dev" {
+  source = "terraform-aws-modules/lambda/aws//modules/alias"
+
+  refresh_alias    = false
+  name             = "dev"
+  function_name    = module.login_function.lambda_function_name
+  function_version = "$LATEST"
 }

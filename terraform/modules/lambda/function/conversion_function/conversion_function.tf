@@ -15,10 +15,11 @@ module "conversion_function" {
   publish = true
 }
 
-output "invoke_arn" {
-    value = module.conversion_function.lambda_function_invoke_arn
-}
+module "conversion_function_alias_dev" {
+  source = "terraform-aws-modules/lambda/aws//modules/alias"
 
-output "function_name" {
-    value = module.conversion_function.lambda_function_name
+  refresh_alias = false
+  name = "dev"
+  function_name    = module.conversion_function.lambda_function_name
+  function_version = "$LATEST"
 }

@@ -1,30 +1,21 @@
-output "vpc_id" {
-  value = module.my_vpc.vpc_id
-}
-
-output "db_address" {
-  value = module.rds_db.db_address
-}
-
-output "db_identifier" {
-  value = module.rds_db.identifier
-}
-
-output "lambda_deps_layer_arn" {
-  value = module.lambda_deps_layer.layer_arn
-}
-
 output "account_id" {
   value = data.aws_caller_identity.current.account_id
 }
 
-output "invoke_arns" {
-  value = {
-    db_init = module.lambda_db_init.invoke_arn
-    health_check = module.health_check_function.invoke_arn
-  }
-}
-
 output "devStageApiUrl" {
   value = module.rest_api_gateway.rest_api_invoke_url
+}
+
+output "prodStageApiUrl" {
+  value = module.rest_api_gateway.rest_api_invoke_url_production
+}
+
+output "function_versions" {
+  value = {
+    "Database init" : module.lambda_db_init.function_version
+    "Health Check": module.health_check_function.function_version
+    "Login" : module.login_function.function_version
+    "CIDR to Mask" : module.cidr_to_mask_function.function_version
+    "Mask to CIDR" : module.mask_to_cidr_function.function_version
+  }
 }

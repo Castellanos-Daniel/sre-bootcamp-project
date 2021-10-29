@@ -94,8 +94,13 @@ resource "aws_api_gateway_deployment" "dev_deployment" {
   }
 }
 
-resource "aws_api_gateway_stage" "developmenet_stage" {
+resource "aws_api_gateway_stage" "development_stage" {
   deployment_id = aws_api_gateway_deployment.dev_deployment.id
   rest_api_id   = aws_api_gateway_rest_api.rest_api.id
-  stage_name    = "Development"
+  stage_name    = "dev"
+}
+resource "aws_api_gateway_stage" "production_stage" {
+  deployment_id = aws_api_gateway_deployment.dev_deployment.id
+  rest_api_id   = aws_api_gateway_rest_api.rest_api.id
+  stage_name    = "prod"
 }
