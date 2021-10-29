@@ -11,7 +11,3 @@ class TestTokenMethods(unittest.TestCase):
     def test_generate_token(self):
         self.assertEqual(self.test_token,
                          self.convert.generate_token('admin'))
-
-
-if __name__ == '__main__':
-    unittest.main()

@@ -1,5 +1,5 @@
 import unittest
-from modules.database import Database
+from functions.auth.modules.database import Database
 
 
 class TestDatabaseMethods(unittest.TestCase):
@@ -45,10 +45,8 @@ class TestDatabaseMethods(unittest.TestCase):
     def test_get_role_with_fake_username(self):
 
         invalid_username = 'not_a_real_user'
-        
-        self.assertFalse(
-            self.database.get_role_by_username(invalid_username)
-        )
 
-if __name__ == '__main__':
-    unittest.main()
+        with Database() as db_connection:
+            self.assertFalse(
+                db_connection.get_role_by_username(invalid_username)
+            )

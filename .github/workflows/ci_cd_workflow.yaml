@@ -1,0 +1,171 @@
+name: Python package
+
+on:
+  push:
+    branches:
+      - development
+
+jobs:
+  StartNotification:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_TITLE: Code push detected on branch
+          SLACK_USERNAME: "Bootcamp Project Pipeline"
+          SLACK_WEBHOOK: ${{ secrets.TEST_WEBHOOK }}
+
+  Unittests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r ./tests/requirements.txt
+      - name: Test with pytest
+        run: |
+          coverage run -m pytest tests/unit/
+          coverage report -m
+        env:
+          ENVIRONMENT: ${{ secrets.ENVIRONMENT }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASS: ${{ secrets.DB_PASS }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          SIGNATURE: ${{ secrets.SIGNATURE }}
+          API_TOKEN: ${{ secrets.API_TOKEN }}
+
+  DeployInfrastructure:
+    needs: [Unittests]
+    name: "Deploy Infrastructure"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.REGION }}
+
+      - name: Terraform init
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          BACKEND_BUCKET: ${{ secrets.BACKEND_BUCKET }}
+          REGION: ${{ secrets.REGION }}
+        run: |
+          cd terraform/
+          ls -l
+          terraform init -input=false
+
+      - name: Pack dependencies
+        run: |
+          mkdir python
+          pip install --upgrade pip 
+          pip install -r requirements.txt -t python/
+          aws s3 cp s3://$DEPS_LAYER_BUCKET/cert/us-east-2-bundle.pem python/
+          zip -r -u deps.zip python/*
+          mv deps.zip terraform/
+        env:
+          DEPS_LAYER_BUCKET: ${{ secrets.DEPS_LAYER_BUCKET}}
+
+      - name: Verify Terraform version
+        run: terraform --version
+
+      - name: Terraform validation, plan and apply
+        run: |
+          cd terraform/
+          terraform validate
+          terraform plan
+          terraform apply --auto-approve
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          BACKEND_BUCKET: ${{ secrets.BACKEND_BUCKET }}
+          REGION: ${{ secrets.REGION }}
+          TF_VAR_db_master_user: ${{ secrets.DB_MASTER_USER }}
+          TF_VAR_db_master_pass: ${{ secrets.DB_MASTER_PASS }}
+      
+      - name: Initial data
+        run: 
+          |
+          aws lambda invoke --function-name db-init-load out --log-type Tail \
+            --query 'LogResult' --output text |  base64 -d
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  TestDevelopmentAPI:
+    needs: [DeployInfrastructure]
+    name: "Test Development API"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r ./tests/integration/requirements.txt
+      - name: Run terraform init
+        run: |
+          cd terraform
+          terraform init
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: Test with pytest
+        run: |
+          cd terraform && export API_URL=$(terraform output devStageApiUrl| sed 's/"//g')
+          cd ..
+          echo $API_URL
+          pytest ./tests/integration/
+        env:
+          TEST_TOKEN: ${{ secrets.TEST_TOKEN }}
+          VALID_USER: ${{ secrets.VALID_USER }}
+          VALID_PASSWORD: ${{ secrets.VALID_PASSWORD }}
+          NO_ROLE_TOKEN: ${{ secrets.NO_ROLE_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  FailureNotification:
+    needs: [Unittests, DeployInfrastructure, TestDevelopmentAPI]
+    if: |
+      always() && (
+        needs.Unittests.result == 'failure' || 
+        needs.DeployInfrastructure.result == 'failure' || 
+        needs.TestDevelopmentAPI.result == 'failure' 
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_TITLE: Unittests have failed
+          SLACK_USERNAME: "Bootcamp Project Pipeline"
+          SLACK_COLOR: "danger"
+          SLACK_MESSAGE: "An error has occurred, check action output for details"
+          SLACK_WEBHOOK: ${{ secrets.TEST_WEBHOOK }}
+  
+  SuccessNotification:
+    needs: [Unittests, DeployInfrastructure, TestDevelopmentAPI]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_TITLE: CI/CD workflow completed successfully
+          SLACK_USERNAME: "Bootcamp Project Pipeline"
+          SLACK_WEBHOOK: ${{ secrets.TEST_WEBHOOK }}

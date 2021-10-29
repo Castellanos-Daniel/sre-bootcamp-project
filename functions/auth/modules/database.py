@@ -14,32 +14,48 @@ class Database():
         logger = logging.getLogger()
         logger.setLevel(logging.DEBUG)
 
-        try: 
-            rds_client = boto3.client('rds')
-            auth_token = rds_client.generate_db_auth_token( 
-                os.environ['DB_HOST'], 3306, os.environ['DB_USER'] )
+        if os.environ['ENVIRONMENT'] == "test":
+            try: 
+                self.db_connection = pymysql.connect(
+                    host=os.environ['DB_HOST'],
+                    port=3306,
+                    user=os.environ['DB_USER'],
+                    passwd=os.environ['DB_PASS'],
+                    db=os.environ['DB_NAME'],
+                    connect_timeout=5
+                )
+            except pymysql.MySQLError as connection_error:
+                logger.error("ERROR: Unexpected error: Could not connect to MySQL instance.")
+                logger.error(str(connection_error))
+                sys.exit()
+        else:
 
-        except ClientError as client_error:
-            logger.error("BOTO Client FAILED:")
-            logger.error(str(client_error))
-            sys.exit()
+            try: 
+                rds_client = boto3.client('rds')
+                auth_token = rds_client.generate_db_auth_token( 
+                    os.environ['DB_HOST'], 3306, os.environ['DB_USER'] )
 
-        ssl_certificate = {'ca': '/opt/python/us-east-2-bundle.pem'}
+            except ClientError as client_error:
+                logger.error("BOTO Client FAILED:")
+                logger.error(str(client_error))
+                sys.exit()
 
-        try: 
-            self.db_connection = pymysql.connect(
-                host=os.environ['DB_HOST'],
-                port=3306,
-                user=os.environ['DB_USER'],
-                passwd=auth_token,
-                ssl=ssl_certificate,
-                db=os.environ['DB_NAME'],
-                connect_timeout=5
-            )
-        except pymysql.MySQLError as connection_error:
-            logger.error("ERROR: Unexpected error: Could not connect to MySQL instance.")
-            logger.error(str(connection_error))
-            sys.exit()
+            ssl_certificate = {'ca': '/opt/python/us-east-2-bundle.pem'}
+
+            try: 
+                self.db_connection = pymysql.connect(
+                    host=os.environ['DB_HOST'],
+                    port=3306,
+                    user=os.environ['DB_USER'],
+                    passwd=auth_token,
+                    ssl=ssl_certificate,
+                    db=os.environ['DB_NAME'],
+                    connect_timeout=5
+                )
+            except pymysql.MySQLError as connection_error:
+                logger.error("ERROR: Unexpected error: Could not connect to MySQL instance.")
+                logger.error(str(connection_error))
+                sys.exit()
             
         logger.info("SUCCESS: Connection to RDS MySQL instance succeeded")
         self.cursor = self.db_connection.cursor()

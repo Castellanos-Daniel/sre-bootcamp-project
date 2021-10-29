@@ -86,7 +86,7 @@ class TestStringMethods(unittest.TestCase):
                 expected_value, self.convert.mask_to_cidr(test_value))
 
     def test_invalid_cidr_to_mask(self):
-        self.assertEqual('Invalid', self.convert.cidr_to_mask('0'))
+        self.assertEqual('Invalid', self.convert.cidr_to_mask('-1'))
 
     def test_invalid_mask_to_cidr(self):
         self.assertEqual('Invalid', self.convert.mask_to_cidr('0.0.0.0'))
@@ -96,7 +96,3 @@ class TestStringMethods(unittest.TestCase):
 
     def test_invalid_ipv4(self):
         self.assertFalse(self.convert.is_valid_ipv4('192.168.1.2.3'))
-
-
-if __name__ == '__main__':
-    unittest.main()
