@@ -11,6 +11,7 @@ resource "aws_api_gateway_method" "hc_method" {
   authorization = "NONE"
 }
 
+#seems to declare the function to run
 resource "aws_api_gateway_integration" "integration" {
   rest_api_id             = var.rest_api_id
   resource_id             = aws_api_gateway_resource.health_check_resource.id
@@ -20,6 +21,7 @@ resource "aws_api_gateway_integration" "integration" {
   uri                     = var.function_invoke_arn
 }
 
+#seems to generate the trigger
 resource "aws_lambda_permission" "hc_function_gw_permission" {
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
