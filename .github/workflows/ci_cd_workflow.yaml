@@ -130,6 +130,7 @@ jobs:
         run: |
           cd terraform && export API_URL=$(terraform output devStageApiUrl| sed 's/"//g')
           cd ..
+          echo $API_URL
           pytest ./tests/integration/
         env:
           TEST_TOKEN: ${{ secrets.TEST_TOKEN }}
